@@ -42,7 +42,7 @@ def create_pdf_from_text(text, output_dir, filename):
 
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Times", size=12)
     # Use multi_cell to handle line breaks automatically
     pdf.multi_cell(0, 10, text)
     pdf.output(full_path)
