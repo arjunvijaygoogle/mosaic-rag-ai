@@ -1,26 +1,45 @@
+import functions_framework
+from google.cloud import storage
 import os
 import fitz
 from vertexai import rag
+import vertexai
 from dotenv import load_dotenv
 from google import genai
 import time
 from fpdf import FPDF
 
-import os
+GEMINI_API_KEY=os.environ.get("GEMINI_API_KEY")
+GEMINI_MODEL=os.environ.get("GEMINI_MODEL")
+CORPUS_PATH=os.environ.get("CORPUS_PATH")
+PROJECT_ID=os.environ.get("PROJECT_ID")
+REGION=os.environ.get("REGION")
 
-load_dotenv()
-API_KEY=os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable not set!")
+if not GEMINI_MODEL:
+    raise ValueError("GEMINI_MODEL environment variable not set!")
+if not CORPUS_PATH:
+    raise ValueError("CORPUS_PATH environment variable not set!")
+if not PROJECT_ID:
+    raise ValueError("PROJECT_ID environment variable not set!")
+if not REGION:
+    raise ValueError("REGION environment variable not set!")
+
 
 LOCAL_FOLDER_PATH = "./"
 LOCAL_IMAGE_FOLDER_PATH = "./images"
 LOCAL_IMAGE_PDF_FOLDER_PATH = "./images-pdf"
 LOCAL_MEDIA_PDF_FOLDER_PATH = "./media-pdf"
 IMAGE_PATH = "./images"
-PROJECT_ID = "agents-stg"
-REGION="us-central1"
-CORPUS_ID = "projects/agents-stg/locations/us-central1/ragCorpora/7991637538768945152"
 # The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client(api_key=API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Initialize the Cloud Storage client
+storage_client = storage.Client()
+
+# Initialize the Vertex AI SDK
+vertexai.init(project=PROJECT_ID, location=REGION)
 
 def create_pdf_from_text(text, output_dir, filename):
     """
@@ -63,15 +82,16 @@ def upload_gemini_file(file_name):
   print(f'Gemini File processing complete: {file.uri}')
 
   return file
+
 def upload_to_vertex_rag(file_path):
     """Uploads a file to the specified Vertex AI RAG corpus."""
     filename = os.path.basename(file_path)
     try:
       rag_file = rag.upload_file(
-        corpus_name=CORPUS_ID,
+        corpus_name=CORPUS_PATH,
         path=file_path,
         display_name=filename,
-        description='pdf file',
+        description=filename,
         )
       print(rag_file)  
     except Exception as e:
@@ -84,7 +104,7 @@ def process_image(image_path, image_filename):
         gemini_file = upload_gemini_file(image_path)
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=GEMINI_MODEL,
             contents=[gemini_file, "explain the image in detail"],
         )
         print(response.text)
@@ -133,12 +153,12 @@ def process_media(file_path, media_type):
         if media_type == "audio":
             gemini_file = upload_gemini_file(file_path)
             response = client.models.generate_content(
-                    model="gemini-2.5-flash", contents=["Describe this audio clip", gemini_file]
+                    model=GEMINI_MODEL, contents=["Describe this audio clip", gemini_file]
                 )
         elif media_type ==  "video":
             gemini_file = upload_gemini_file(file_path)
             response = client.models.generate_content(
-                    model="gemini-2.5-flash", contents=["Describe the video", gemini_file]
+                    model=GEMINI_MODEL, contents=["Describe the video", gemini_file]
                 )
             
         if response.text:
@@ -150,22 +170,42 @@ def process_media(file_path, media_type):
     except Exception as e:
         print(f"Error processing {media_type} file {file_path}: {e}")
 
-def main():
-    """Main function to iterate through the local folder and process files."""
-    for filename in os.listdir(LOCAL_FOLDER_PATH+"/data"):
-        file_path = os.path.join(LOCAL_FOLDER_PATH+"/data", filename)
-        if os.path.isfile(file_path):
-            if filename.lower().endswith(".pdf"):
-                print(f"--- Processing PDF: {filename} ---")
-                process_pdf(file_path)
-            elif filename.lower().endswith(".mp3"):
-                print(f"--- Processing MP3: {filename} ---")
-                process_media(file_path, "audio")
-            elif filename.lower().endswith(".mp4"):
-                print(f"--- Processing MP4: {filename} ---")
-                process_media(file_path, "video")
-            else:
-                print(f"--- Skipping unsupported file: {filename} ---")
+@functions_framework.cloud_event
+def process_event(cloud_event):
+  """
+  This function is triggered by a CloudEvent.
+  """
+  print(f"Received event with ID: {cloud_event['id']}")
+  print(f"Event type: {cloud_event['type']}")
 
-if __name__ == "__main__":
-    main()
+  # Extract file and bucket information from the CloudEvent
+  data = cloud_event.data
+  bucket_name = data["bucket"]
+  file_name = data["name"]
+
+  print(f"Processing file: {file_name} from bucket: {bucket_name}.")
+
+  # Download the file
+  bucket = storage_client.bucket(bucket_name)
+  blob = bucket.blob(file_name)
+  
+  # Download the file to a temporary location in the Cloud Function's runtime environment
+  # The /tmp directory is an in-memory file system.
+  file_path = f"/tmp/{file_name}"
+  blob.download_to_filename(file_path)
+
+  print(f"File {file_name} downloaded to {file_path}.")
+  if os.path.isfile(file_path):
+    if file_name.lower().endswith(".pdf"):
+        print(f"--- Processing PDF: {file_name} ---")
+        process_pdf(file_path)
+    elif file_name.lower().endswith(".mp3"):
+        print(f"--- Processing MP3: {file_name} ---")
+        process_media(file_path, "audio")
+    elif file_name.lower().endswith(".mp4"):
+        print(f"--- Processing MP4: {file_name} ---")
+        process_media(file_path, "video")
+    else:
+        print(f"--- Skipping unsupported file: {file_name} ---")
+
+  # --- End of your processing logic ---
