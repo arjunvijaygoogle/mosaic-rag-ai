@@ -147,6 +147,10 @@ def process_pdf(file_path):
     except Exception as e:
         print(f"Error processing PDF {file_path}: {e}")
 
+def remove_file_from_rag(file_path):
+    rag.delete_file(name=file_path)
+    print(f"File {file_path} deleted.")
+
 def process_media(file_path, media_type):
     """Uses Gemini API for audio/video understanding and uploads the response as a PDF."""
     try:
@@ -172,40 +176,52 @@ def process_media(file_path, media_type):
 
 @functions_framework.cloud_event
 def process_event(cloud_event):
-  """
-  This function is triggered by a CloudEvent.
-  """
-  print(f"Received event with ID: {cloud_event['id']}")
-  print(f"Event type: {cloud_event['type']}")
+    """
+    This function is triggered by a CloudEvent.
+    """
+    print(f"Received event with ID: {cloud_event['id']}")
+    print(f"Event type: {cloud_event['type']}")
+    data = cloud_event.data
+    bucket_name = data["bucket"]
+    file_name = data["name"]
+    print(f"Processing file: {file_name} from bucket: {bucket_name}.")
 
-  # Extract file and bucket information from the CloudEvent
-  data = cloud_event.data
-  bucket_name = data["bucket"]
-  file_name = data["name"]
+    if cloud_event['type'] == "google.cloud.storage.object.v1.finalized":
 
-  print(f"Processing file: {file_name} from bucket: {bucket_name}.")
+        # Download the file
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(file_name)
 
-  # Download the file
-  bucket = storage_client.bucket(bucket_name)
-  blob = bucket.blob(file_name)
-  
-  # Download the file to a temporary location in the Cloud Function's runtime environment
-  # The /tmp directory is an in-memory file system.
-  file_path = f"/tmp/{file_name}"
-  blob.download_to_filename(file_path)
+        # Download the file to a temporary location in the Cloud Function's runtime environment
+        # The /tmp directory is an in-memory file system.
+        file_path = f"/tmp/{file_name}"
+        blob.download_to_filename(file_path)
 
-  print(f"File {file_name} downloaded to {file_path}.")
-  if os.path.isfile(file_path):
-    if file_name.lower().endswith(".pdf"):
-        print(f"--- Processing PDF: {file_name} ---")
-        process_pdf(file_path)
-    elif file_name.lower().endswith(".mp3"):
-        print(f"--- Processing MP3: {file_name} ---")
-        process_media(file_path, "audio")
-    elif file_name.lower().endswith(".mp4"):
-        print(f"--- Processing MP4: {file_name} ---")
-        process_media(file_path, "video")
+        print(f"File {file_name} downloaded to {file_path}.")
+        if os.path.isfile(file_path):
+            if file_name.lower().endswith(".pdf"):
+                print(f"--- Processing PDF: {file_name} ---")
+                process_pdf(file_path)
+            elif file_name.lower().endswith(".png") or file_name.lower().endswith(".jpg") or file_name.lower().endswith(".jpeg") or file_name.lower().endswith(".webp"):
+                print(f"--- Processing Images: {file_name} ---")
+                process_image(file_path, file_name)
+            elif file_name.lower().endswith((".mp3", ".m4a", ".aac", ".flac", ".wav", ".opus", ".mpga", ".mp4", ".pcm", ".webm")):
+                print(f"--- Processing MP3: {file_name} ---")
+                process_media(file_path, "audio")
+            elif file_name.lower().endswith((".mp4", ".mov", ".qt", ".flv", ".mpeg", ".mpg", ".webm", ".wmv", ".3gp")):
+                print(f"--- Processing MP4: {file_name} ---")
+                process_media(file_path, "video")
+            else:
+                print(f"--- Skipping unsupported file: {file_name} ---")
+    elif cloud_event['type'] == "google.cloud.storage.object.v1.deleted":
+        # Extract file and bucket information from the CloudEvent
+        files = rag.list_files(corpus_name=CORPUS_PATH)
+        for file in files:
+            print(f"comparing file name from RAG = {file.display_name} and file_name = {file_name}")
+            if os.path.splitext(file.display_name)[0] == os.path.splitext(file_name)[0]:
+                remove_file_from_rag(file.name)
     else:
-        print(f"--- Skipping unsupported file: {file_name} ---")
+        print(f"Unknown event type: {cloud_event['type']}")
+
 
   # --- End of your processing logic ---

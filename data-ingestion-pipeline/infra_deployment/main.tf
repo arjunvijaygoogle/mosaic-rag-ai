@@ -102,12 +102,12 @@ resource "google_project_iam_member" "ai_platform_user" {
   depends_on = [google_project_iam_member.storage_object_viewer]
 }
 
-resource "google_cloudfunctions2_function" "default" {
+resource "google_cloudfunctions2_function" "mosaic_rag_function_additions" {
   depends_on = [
     google_project_iam_member.event_receiving,
     google_project_iam_member.artifactregistry_reader,
   ]
-  name        = "mosaic-rag-ingestion-pipeline-function"
+  name        = "mosaic-rag-ingestion-pipeline-function-additions"
   location    = var.region
   description = "Ingestion Pipeline function which processes all the files for mosaic-rag-ingestion"
 
@@ -153,6 +153,65 @@ resource "google_cloudfunctions2_function" "default" {
   event_trigger {
     trigger_region        = var.region # The trigger must be in the same location as the bucket
     event_type            = "google.cloud.storage.object.v1.finalized"
+    service_account_email = google_service_account.account.email
+    event_filters {
+      attribute = "bucket"
+      value     = google_storage_bucket.trigger_bucket.name
+    }
+  }
+}
+
+resource "google_cloudfunctions2_function" "mosaic_rag_function_deletions" {
+  depends_on = [
+    google_project_iam_member.event_receiving,
+    google_project_iam_member.artifactregistry_reader,
+  ]
+  name        = "mosaic-rag-ingestion-pipeline-function-deletions"
+  location    = var.region
+  description = "Ingestion Pipeline function which processes all the files for mosaic-rag-ingestion"
+
+  build_config {
+    runtime     = "python310"
+    entry_point = "process_event" # Set the entry point in the code
+    environment_variables = {
+      BUILD_CONFIG_TEST = "build_test"
+      GEMINI_API_KEY = var.gemini_api_key
+      GEMINI_MODEL = var.gemini_model
+      CORPUS_PATH = var.corpus_path
+      PROJECT_ID = var.gcp_project_id
+      REGION = var.region
+    }
+    source {
+      storage_source {
+        bucket = google_storage_bucket.source_bucket.name
+        object = google_storage_bucket_object.default.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 6
+    min_instance_count = 1
+    available_memory   = "4Gi"
+    available_cpu = "8"
+    timeout_seconds    = 60
+    max_instance_request_concurrency = 10
+    environment_variables = {
+      SERVICE_CONFIG_TEST = "config_test"
+      GEMINI_API_KEY = var.gemini_api_key
+      GEMINI_MODEL = var.gemini_model
+      CORPUS_PATH = var.corpus_path
+      PROJECT_ID = var.gcp_project_id
+      REGION = var.region
+    }
+    ingress_settings               = "ALLOW_INTERNAL_ONLY"
+    all_traffic_on_latest_revision = true
+    service_account_email          = google_service_account.account.email
+  }
+
+  event_trigger {
+    trigger_region        = var.region # The trigger must be in the same location as the bucket
+    event_type            = "google.cloud.storage.object.v1.deleted"
     service_account_email = google_service_account.account.email
     event_filters {
       attribute = "bucket"

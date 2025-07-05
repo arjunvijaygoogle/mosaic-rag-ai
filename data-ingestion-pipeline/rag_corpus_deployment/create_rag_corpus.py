@@ -42,7 +42,7 @@ def create_rag_corpus(
             rag_embedding_model_config=embedding_model_config
         ),
     )
-    # rag_corpus = rag.create_corpus(display_name=corpus_display_name)
+    
     corpus_id = rag_corpus.name.split("/")[-1]
     print(f"Successfully created RAG Corpus with path: {rag_corpus.name}")
     print(f"Corpus ID: {corpus_id}")
