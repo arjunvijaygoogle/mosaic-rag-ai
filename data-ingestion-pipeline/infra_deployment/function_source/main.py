@@ -151,6 +151,15 @@ def remove_file_from_rag(file_path):
     rag.delete_file(name=file_path)
     print(f"File {file_path} deleted.")
 
+def delete_files_from_rag(file_name):
+    # Extract file and bucket information from the CloudEvent
+    files = rag.list_files(corpus_name=CORPUS_PATH)
+    for file in files:
+        print(f"comparing file name from RAG = {file.display_name} and file_name = {file_name}")
+        if os.path.splitext(file.display_name)[0] == os.path.splitext(file_name)[0]:
+            remove_file_from_rag(file.name)
+
+
 def process_media(file_path, media_type):
     """Uses Gemini API for audio/video understanding and uploads the response as a PDF."""
     try:
@@ -197,6 +206,9 @@ def process_event(cloud_event):
         file_path = f"/tmp/{file_name}"
         blob.download_to_filename(file_path)
 
+        #Delete exisiting file from RAG
+        delete_files_from_rag(file_name)
+
         print(f"File {file_name} downloaded to {file_path}.")
         if os.path.isfile(file_path):
             if file_name.lower().endswith(".pdf"):
@@ -214,14 +226,7 @@ def process_event(cloud_event):
             else:
                 print(f"--- Skipping unsupported file: {file_name} ---")
     elif cloud_event['type'] == "google.cloud.storage.object.v1.deleted":
-        # Extract file and bucket information from the CloudEvent
-        files = rag.list_files(corpus_name=CORPUS_PATH)
-        for file in files:
-            print(f"comparing file name from RAG = {file.display_name} and file_name = {file_name}")
-            if os.path.splitext(file.display_name)[0] == os.path.splitext(file_name)[0]:
-                remove_file_from_rag(file.name)
+        delete_files_from_rag(file_name)
     else:
         print(f"Unknown event type: {cloud_event['type']}")
-
-
   # --- End of your processing logic ---

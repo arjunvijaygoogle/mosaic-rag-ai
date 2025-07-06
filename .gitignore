@@ -210,3 +210,4 @@ __marimo__/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.state.backup
+agent/mosaic_rag_agent/__pycache__

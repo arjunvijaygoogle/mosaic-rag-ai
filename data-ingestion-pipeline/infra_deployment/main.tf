@@ -158,6 +158,7 @@ resource "google_cloudfunctions2_function" "mosaic_rag_function_additions" {
       attribute = "bucket"
       value     = google_storage_bucket.trigger_bucket.name
     }
+    retry_policy = "RETRY_POLICY_RETRY"
   }
 }
 
@@ -217,6 +218,7 @@ resource "google_cloudfunctions2_function" "mosaic_rag_function_deletions" {
       attribute = "bucket"
       value     = google_storage_bucket.trigger_bucket.name
     }
+    retry_policy = "RETRY_POLICY_RETRY"
   }
 }
 
