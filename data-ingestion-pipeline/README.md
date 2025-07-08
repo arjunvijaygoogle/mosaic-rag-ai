@@ -49,7 +49,27 @@ The pipeline is designed to handle a mosaic of file types. When you upload files
 *   **Video**:
     *   `mov`, `qt`, `flv`, `mpeg`, `mpg`, `wmv`, `3gp`: Gemini analyzes the video content and generates a description, which is then ingested.
 
-> **Note**: Files with `.mp4` and `.webm` extensions are currently processed as audio files by the pipeline due to the order of checks in the processing logic.
+## ✍️ Tweaking Prompts
+
+The prompts used by the Cloud Function to generate descriptions and transcriptions for your multimedia files (images, videos, audio) are a key part of the ingestion process. You can customize these to better suit your specific data and needs.
+
+### Where to Find the Prompts
+
+The prompts are located within the Python source code of the Cloud Function, inside the `data-ingestion-pipeline/function_source/` directory. You will likely find string variables or functions that construct the prompts sent to the Gemini model.
+
+### How to Modify
+
+1.  **Locate the prompt strings:** Open the Python files in `function_source/`. Look for variables that hold text like `"Describe this image in detail:"` or `"Transcribe the following audio:"`.
+2.  **Edit the prompt:** Change the text to alter the model's output. For example, you could ask for a more concise summary, a list of key entities, or a description in a specific tone.
+    *   **For Images:** You could change `"Generate a detailed description of the image"` to `"Identify all the people in this image and describe their actions."`
+    *   **For Videos:** You could change `"Analyze the video content and generate a description"` to `"Create a time-stamped summary of the key scenes in this video."`
+3.  **Redeploy:** After modifying the prompts, you must redeploy the infrastructure for the changes to take effect. You can do this by running the `deploy-infra.sh` script again.
+
+    ```bash
+    ./deploy-infra.sh
+    ```
+
+This will zip up your modified function code, upload it, and update the Cloud Function, ensuring that all new files processed will use your new prompts.
 
 ## 🛠️ Tech Stack
 

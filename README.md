@@ -19,6 +19,18 @@
   Welcome to Mosaic RAG AI, a state-of-the-art system architecture designed to transform your organization's data archive into a dynamic, interactive knowledge base. This system moves beyond simple keyword search, allowing users to have natural language conversations with their data, regardless of the format: video, audio, images, PDFs, and text.
 </p>
 
+## 🗂️ Supported Formats
+
+The pipeline is designed to handle a mosaic of file types. When you upload files to the trigger bucket, the Cloud Function automatically processes them based on their extension:
+
+*   **Documents**:
+    *   `pdf`: Extracts text and any embedded images. The text is ingested directly, and the images are described by Gemini, with the descriptions also added to the corpus.
+*   **Images**:
+    *   `png`, `jpg`, `jpeg`, `webp`: Gemini generates a detailed description of the image, which is then ingested.
+*   **Audio**:
+    *   `mp3`, `m4a`, `aac`, `flac`, `wav`, `opus`, `mpga`, `mp4`, `pcm`, `webm`: Gemini transcribes or describes the audio content, and the resulting text is ingested.
+*   **Video**:
+    *   `mov`, `qt`, `flv`, `mpeg`, `mpg`, `wmv`, `3gp`: Gemini analyzes the video content and generates a description, which is then ingested.
 ---
 
 ## 🏛️ Architecture Overview
