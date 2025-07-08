@@ -10,7 +10,7 @@
   <img alt="Terraform" src="https://img.shields.io/badge/Terraform-Ready-blueviolet?style=for-the-badge&logo=terraform">
   <img alt="Google Cloud" src="https://img.shields.io/badge/Google_Cloud-Deployable-red?style=for-the-badge&logo=google-cloud">
   <img alt="Shell Script" src="https://img.shields.io/badge/Shell_Script-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white">
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache-purple?style=for-the-badge">
 </p>
 
 <p align="center">
@@ -35,6 +35,21 @@
 * **Automated Corpus Deployment:** Leverages **Google Cloud Build** for a repeatable, automated process to create and populate the Vertex AI RAG Corpus.
 * **Simplified Workflow:** Provides simple shell scripts (`deploy-infra.sh`, `deploy-rag.sh`) to manage the entire deployment lifecycle.
 * **Clean Separation:** Infrastructure provisioning (`infra_deployment`) is cleanly separated from the data ingestion logic (`rag_corpus_deployment`).
+
+## 🗂️ Supported Formats
+
+The pipeline is designed to handle a mosaic of file types. When you upload files to the trigger bucket, the Cloud Function automatically processes them based on their extension:
+
+*   **Documents**:
+    *   `pdf`: Extracts text and any embedded images. The text is ingested directly, and the images are described by Gemini, with the descriptions also added to the corpus.
+*   **Images**:
+    *   `png`, `jpg`, `jpeg`, `webp`: Gemini generates a detailed description of the image, which is then ingested.
+*   **Audio**:
+    *   `mp3`, `m4a`, `aac`, `flac`, `wav`, `opus`, `mpga`, `mp4`, `pcm`, `webm`: Gemini transcribes or describes the audio content, and the resulting text is ingested.
+*   **Video**:
+    *   `mov`, `qt`, `flv`, `mpeg`, `mpg`, `wmv`, `3gp`: Gemini analyzes the video content and generates a description, which is then ingested.
+
+> **Note**: Files with `.mp4` and `.webm` extensions are currently processed as audio files by the pipeline due to the order of checks in the processing logic.
 
 ## 🛠️ Tech Stack
 
@@ -137,4 +152,3 @@ Contributions are welcome! If you have suggestions for improvements or want to a
 ## 📄 License
 
 This project is distributed under the MIT License.
-

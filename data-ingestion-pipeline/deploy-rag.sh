@@ -1,24 +1,31 @@
 #!/bin/sh
+set -eu
 
-#
-# login with ADC
+echo "Authenticating with gcloud..."
 gcloud auth application-default login
 
-# Get the ID of the currently configured gcloud project
+echo "Fetching Google Cloud project details..."
 PROJECT_ID=$(gcloud config get-value project)
+if [ -z "$PROJECT_ID" ]; then
+    echo "GCP project not set. Please run 'gcloud config set project YOUR_PROJECT_ID'"
+    exit 1
+fi
 
-# Get the project number for that project
 PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+if [ -z "$PROJECT_NUMBER" ]; then
+    echo "Could not retrieve project number for project $PROJECT_ID."
+    exit 1
+fi
 
-# Grant the AI Platform Admin role to the default Compute Engine service account
-# for the *current* project.
+SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+echo "Ensuring service account ${SERVICE_ACCOUNT} has aiplatform.admin role..."
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --member="serviceAccount:${SERVICE_ACCOUNT}" \
     --role="roles/aiplatform.admin" --quiet
 
-cd rag_corpus_deployment || exit
+echo "Submitting Cloud Build job for RAG corpus deployment..."
+cd rag_corpus_deployment || exit 1
 gcloud builds submit --config cloudbuild.yaml
 
-
-
-
+echo "Cloud Build job submitted successfully."

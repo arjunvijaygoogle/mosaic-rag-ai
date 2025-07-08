@@ -10,7 +10,7 @@
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Ready-green?style=for-the-badge&logo=fastapi">
   <img alt="Google Cloud" src="https://img.shields.io/badge/Google_Cloud-Deployable-red?style=for-the-badge&logo=google-cloud">
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache-purple?style=for-the-badge">
 </p>
 
 <p align="center">
