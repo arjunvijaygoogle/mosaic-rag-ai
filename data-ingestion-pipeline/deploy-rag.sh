@@ -22,7 +22,7 @@ SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 echo "Ensuring service account ${SERVICE_ACCOUNT} has aiplatform.admin role..."
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="serviceAccount:${SERVICE_ACCOUNT}" \
-    --role="roles/aiplatform.admin" --quiet
+    --role="roles/aiplatform.admin" --condition=None
 
 echo "Submitting Cloud Build job for RAG corpus deployment..."
 cd rag_corpus_deployment || exit 1
