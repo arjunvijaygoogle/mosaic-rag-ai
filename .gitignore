@@ -211,3 +211,4 @@ __marimo__/
 terraform.tfstate
 terraform.state.backup
 agent/mosaic_rag_agent/__pycache__
+data-ingestion-pipeline/infra_deployment/terraform.tfstate.backup
