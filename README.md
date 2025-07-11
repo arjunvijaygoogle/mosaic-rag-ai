@@ -105,6 +105,84 @@ The Mosaic RAG AI architecture represents a paradigm shift from data search to d
 
 This is the future of business intelligence, where every piece of data—whether seen, heard, or read—becomes an accessible and actionable part of an organization's collective knowledge.
 
+## 🌟 Awesome Use Cases
+
+This solution is not just a technical framework; it's a versatile tool that can be applied across numerous industries to solve real-world problems. Here are a few examples:
+
+1.  **Marketing & Brand Analytics:**
+    *   **Scenario:** A marketing team has decades of assets: video commercials, print ads (PDFs), social media images, and radio spots (audio).
+    *   **Use Case:** A brand manager can ask, *"Show me all campaigns from the last 5 years that featured our 'classic' logo and summarize the key messages from the video ads."* The system can identify the logo in images and videos, transcribe the ad scripts, and provide a synthesized summary, offering deep competitive and brand insights in seconds.
+
+2.  **Media & Entertainment Archival Research:**
+    *   **Scenario:** A news organization sits on a massive archive of video footage, interview transcripts, and published articles.
+    *   **Use Case:** A journalist investigating a long-running story can query, *"Find all video clips where 'Senator Smith' discussed 'renewable energy' and cross-reference it with articles published in the same month."* This accelerates investigative journalism by instantly connecting visual and textual records that would otherwise require days of manual searching.
+
+3.  **Supply Chain & Manufacturing Operations:**
+    *   **Scenario:** A large factory documents its assembly lines with video tutorials, machine maintenance manuals (PDFs), and daily incident reports.
+    *   **Use Case:** A line supervisor facing a machine failure can ask their tablet, *"Show me the video on fixing a coolant leak for the X-25 press and pull up the schematics from the manual."* The system provides immediate, actionable intelligence, reducing downtime and improving safety.
+
+4.  **Corporate Training & Knowledge Management:**
+    *   **Scenario:** An enterprise has a vast library of recorded all-hands meetings, video training modules, and hundreds of policy documents.
+    *   **Use Case:** A new employee can ask, *"What was the CEO's main message about our Q3 strategy in the last town hall, and where can I find the official policy on remote work?"* The system can pinpoint the exact moment in the video and retrieve the relevant HR document, making corporate knowledge instantly accessible.
+
+5.  **Product Development & User Research:**
+    *   **Scenario:** A UX research team collects feedback through video-recorded user interviews, audio notes, and written survey responses.
+    *   **Use Case:** A product manager can ask, *"Summarize user feedback from the last 6 months regarding our mobile app's checkout process. What are the top three pain points mentioned in interviews?"* The system transcribes and analyzes all feedback formats to deliver a concise summary of user sentiment and actionable insights, driving data-informed product decisions.
+
+## ✍️ Tweaking Prompts for Deeper Insights
+
+The true power of the Mosaic RAG AI system comes from its ability to be tailored to your specific domain and analytical needs. A key part of this customization is tweaking the prompts used during the data ingestion phase. By changing how you ask Gemini to interpret your multimedia files, you can control the focus and depth of the knowledge stored in your RAG corpus.
+
+### Where to Find the Prompts
+
+The core prompts are located within the Cloud Function's source code:
+
+*   **File:** `data-ingestion-pipeline/infra_deployment/function_source/main.py`
+
+Inside this file, look for the `process_image` and `process_media` functions. You will find the hardcoded prompts within the `client.models.generate_content()` calls.
+
+*   **For Images:** `contents=[gemini_file, "explain the image in detail"]`
+*   **For Audio:** `contents=["Describe this audio clip", gemini_file]`
+*   **For Video:** `contents=["Describe the video", gemini_file]`
+
+### How to Modify for Different Levels of Understanding
+
+You can change these simple string prompts to elicit different kinds of responses from the model.
+
+**Example 1: Basic vs. Technical Description**
+
+*   **Default (Basic):**
+    ```python
+    contents=[gemini_file, "explain the image in detail"]
+    ```
+*   **Modified (Technical for Engineering):**
+    ```python
+    contents=[gemini_file, "This is an image of a machine part. Identify the part, describe any visible wear or damage, and list potential maintenance actions."]
+    ```
+
+**Example 2: General Summary vs. Action-Oriented Summary**
+
+*   **Default (General):**
+    ```python
+    contents=["Describe the video", gemini_file]
+    ```
+*   **Modified (Action-Oriented for Project Management):**
+    ```python
+    contents=["This is a video of our weekly project sync. Create a time-stamped summary of the key decisions made and list all action items with their assigned owners."]
+    ```
+
+### Redeploying Your Changes
+
+After you modify and save the `main.py` file, your changes will not take effect until you redeploy the infrastructure. The deployment script handles packaging and updating the Cloud Function with your new logic.
+
+1.  Navigate to the `data-ingestion-pipeline` directory.
+2.  Run the deployment script:
+    ```bash
+    ./deploy-infra.sh
+    ```
+
+Now, any new files you upload will be processed using your customized prompts, leading to a knowledge base that is fine-tuned to your exact requirements.
+
 ## 🚀 Getting Started: A Two-Step Workflow
 
 To get your own Mosaic RAG system running, you will first deploy the data pipeline and then deploy the agent that connects to it.
