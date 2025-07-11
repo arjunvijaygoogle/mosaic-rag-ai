@@ -19,6 +19,15 @@
   Welcome to Mosaic RAG AI, a state-of-the-art system architecture designed to transform your organization's data archive into a dynamic, interactive knowledge base. This system moves beyond simple keyword search, allowing users to have natural language conversations with their data, regardless of the format: video, audio, images, PDFs, and text.
 </p>
 
+<p align="center">
+  <a href="#️-architecture-overview">Architecture</a> •
+  <a href="#-key-features">Features</a> •
+  <a href="#-awesome-use-cases">Use Cases</a> •
+  <a href="#-getting-started-a-two-step-workflow">Getting Started</a> •
+  <a href="#-project-structure">Project Structure</a> •
+  <a href="#-contributing">Contributing</a>
+</p>
+
 ## 🗂️ Supported Formats
 
 The pipeline is designed to handle a mosaic of file types. When you upload files to the trigger bucket, the Cloud Function automatically processes them based on their extension:
